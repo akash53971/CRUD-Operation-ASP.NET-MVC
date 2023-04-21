@@ -1,0 +1,231 @@
+﻿@model CRUDAjax.Models.Class
+@{
+    Layout = "~/Views/Shared/AdminLayout.cshtml";
+}
+<nav>
+    <ul id="qm0" class="qmmc">
+        <li><a href="WelcomeAdmin">Dashboard</a></li>
+        <li>
+            <a href="#">Product</a>
+            <ul>
+                <li><a href="Category">Add Category</a></li>
+                <li><a href="Product">Add Product</a></li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+
+<div id="wrap">
+    <div class="clear" style="height:5px;"></div>
+    <div id="wrap2">
+        <h1>Add Product</h1>
+        <br>
+
+        <div class="form-raw">
+            <div class="form-name">Select Category</div>
+            <div class="form-txtfld">
+                <select id="ddlCategory"></select>
+            </div>
+        </div>
+        <div class="clear"></div>
+
+        <div class="form-raw">
+            <div class="form-name">Product Name</div>
+            <div class="form-txtfld">
+                <input type="text" id="ProductName">
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <div class="form-raw">
+        <div class="form-name">&nbsp;</div>
+        <div class="form-txtfld">
+            <input type="button" class="btn" value="Submit" id="btnAdd" onclick="return Add();" />
+            <span id="spnbtn"></span>
+        </div>
+    </div>
+</div>
+<div class="clear">&nbsp;</div>
+<div class="table-responsive">
+    <table id="Prolist" class="table table-bordered table-striped">
+            <thead class="bg-dark text-white">
+                <tr>
+                    <th>SrNo.</th>
+                    <th> Product Id</th>
+                    <th> Product Name</th>
+                    <th>Category Id</th>
+                    <th>Category Name</th>
+                    <th>Edit</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+        </table>
+    <div class="clear">&nbsp;</div>
+</div>
+<div class="clear">&nbsp;</div>
+<link href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css" rel="stylesheet">
+<script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+<script>
+    BindCategory();
+    function BindCategory() {
+        $.ajax({
+            url: "/Home/BindCategory",
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (data) {
+                var msg = '<option value="0">--Select--</option>';
+                for (var i = 0; i < data.length; i++) {
+                    msg += '<option value="' + data[i].CategoryId + '">' + data[i].CategoryName + '</option>';
+                }
+                $("#ddlCategory").html(msg);
+            }
+        });
+    }
+    GetProduct();
+    function GetProduct() {
+        $('#Prolist').DataTable({
+                serverSide: true,
+                processing: true,
+                "ordering": false,
+                "destroy": true,
+                "filter": false,
+                "paging": true,
+                "responsive": true,
+                "lengthChange": false,
+                ajax: {
+                    url: "/Home/ListProduct",
+                    data: function (d) {
+                        d.pageNumber = $('#Prolist').DataTable().page.info().page + 1;
+                        d.pageSize = $('#Prolist').DataTable().page.info().length;
+                    }
+                },
+                columns: [
+                    { "data": "SrNo" },
+                    { "data": "CategoryId" },
+                    { "data": "CategoryName" },
+                    { "data": "ProductId" },
+                    { "data": "ProductName" },
+                    { "data": "Action1" },
+                    { "data": "Action2" }
+                ]
+            });
+        }
+    function GetbyId(ProductId, CategoryId, ProductName) {
+        $('#PId').val(ProductId);
+        $("#ddlCategory").val(CategoryId);
+        $('#ProductName').val(ProductName);
+        $('#btnAdd').hide();
+        $("#spnbtn").html('<input id="btnUpdate" onclick ="Update(' + ProductId + ')" type = "button" class= "btn" value = "Update" /> ');
+    }
+
+    //Add Data Function
+    function Add() {
+        if ($("#ddlCategory").val() == '') {
+            toastr.warning("Please Select Category Name");
+            return;
+        }
+        if ($("#ProductName").val() == '') {
+            toastr.warning("Please Enter Product Name");
+            return;
+        }
+        var dtObj = new FormData();
+        dtObj.append("CategoryId", $("#ddlCategory").val());
+        dtObj.append("ProductName", $("#ProductName").val());
+        $.ajax({
+            url: "/Home/AddProduct",
+            type: "POST",
+            contentType: false,
+            processData: false,
+            data: dtObj,
+            success: function (result) {
+                if (result == 1) {
+                    toastr.success("Product Successfully Inserted", "Success");
+                    $('#ddlCategory').val('');
+                    $('#ProductName').val('');
+                    GetProduct();
+                }
+                else {
+                    toastr["warning"](Response.Message, "Warning");
+                }
+            },
+            error: function (errormessage) {
+                toastr["warning"](errormessage, "Error");
+            }
+        });
+    }
+
+    //function for updating Product's record
+    function Update(ProductId) {
+        if ($("#ddlCategory").val() == '') {
+            toastr.warning("Please Select Category Name");
+            return;
+        }
+        if ($("#ProductName").val() == '') {
+            toastr.warning("Please Enter Product Name");
+            return;
+        }
+        var dtObj = new FormData();
+        dtObj.append("ProductId", ProductId);
+        dtObj.append("CategoryId", $("#ddlCategory").val());
+        dtObj.append("ProductName", $("#ProductName").val());
+        $.ajax({
+            url: "/Home/UpdateProduct",
+            type: "POST",
+            contentType: false,
+            processData: false,
+            data: dtObj,
+            success: function (result) {
+                if (result == 1) {
+                    toastr.success("Product Successfully Updated", "Success");
+                    $('#ddlCategory').val('');
+                    $('#ProductName').val('');
+                    $('#btnAdd').show();
+                    $("#spnbtn").hide();
+                    GetProduct();
+                }
+                else {
+                    toastr["warning"](Response.Message, "Warning");
+                }
+            },
+            error: function (errormessage) {
+                toastr["warning"](errormessage, "Error");
+            }
+        });
+    }
+    //function for deleting Product's record
+    function Delete(ProductId) {
+        Swal.fire({
+            title: 'Do you want Delete this Product?',
+            showDenyButton: true,
+            confirmButtonText: 'yes',
+            denyButtonText: 'No',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "/Home/DeleteProduct",
+                    type: "POST",
+                    contentType: "application/json;charset=utf-8",
+                    dataType: "json",
+                    data: '{ProductId: ' + ProductId + '}',
+                    success: function (result) {
+                        if (result == 1) {
+                            toastr.success("Product Successfully Deleted", "Success");
+                            GetProduct();
+                        }
+                        else {
+                            toastr["warning"](Response.Message, "Warning");
+                        }
+                    },
+                    error: function (errormessage) {
+                        toastr["warning"](errormessage, "Error");
+
+                    }
+                });
+            }
+            else if (result.isDenied) {
+                Swal.fire('No', '', 'info');
+            }
+        })
+    }
+</script>

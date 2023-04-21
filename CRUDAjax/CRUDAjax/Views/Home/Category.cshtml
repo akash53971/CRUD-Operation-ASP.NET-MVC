@@ -1,0 +1,223 @@
+﻿@model CRUDAjax.Models.Class
+@{
+    Layout = "~/Views/Shared/AdminLayout.cshtml";
+}
+<nav>
+    <ul id="qm0" class="qmmc">
+        <li><a href="WelcomeAdmin">Dashboard</a></li>
+        <li>
+            <a href="#">Product</a>
+            <ul>
+                <li><a href="Category">Add Category</a></li>
+                <li><a href="Product">Add Product</a></li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+
+<div id="wrap">
+    <div class="clear" style="height:5px;"></div>
+    <div id="wrap2">
+        <h1>Add Category</h1>
+        <br>
+        <div class="form-raw">
+            <div class="form-name">Category Name</div>
+            <div class="form-txtfld">
+                <input type="text" id="CategoryName" />
+            </div>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <div class="clear"></div>
+    <div class="form-raw">
+        <div class="form-name">Active</div>
+        <div class="form-txtfld">
+            <input type="checkbox" id="ChkStatus" value="1" />
+        </div>
+        <div class="clear"></div>
+    </div>
+
+    <div class="form-raw">
+        <div class="form-name">&nbsp;</div>
+        <div class="form-txtfld" style="width:290px;">
+            <input type="button" class="btn" value="Submit" id="btnAdd" onclick="return Add();" />
+            <input type="button" class="btn" value="Update" id="btnUpdate" style="display:none" onclick="return Update();" />
+        </div>
+    </div>
+</div>
+<div class="clear">&nbsp;</div>
+<div id="wrap3">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" class="admintable">
+        <thead>
+            <tr>
+                <th width="59" align="left" valign="middle">SrNo.</th>
+                <th width="752" align="left" valign="middle">Category Name</th>
+                <th width="77" align="left" valign="middle">Status</th>
+                <th width="54" align="left" valign="middle">Edit</th>
+                <th width="71" align="left" valign="middle">Remove</th>
+            </tr>
+        </thead>
+        <tbody class="tbody">
+        </tbody>
+    </table>
+    <input type="hidden" id="CatId" />
+    <div class="clear">&nbsp;</div>
+</div>
+<div class="clear">&nbsp;</div>
+<script>
+    GetCategory();
+    function GetCategory() {
+        $.ajax({
+            url: "/Home/ListCategory",
+            type: "GET",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                var html = '';
+                $.each(result, function (key, item) {
+                    html += '<tr>';
+                    html += '<td>' + item.SrNo + '</td>';
+                    html += '<td>' + item.CategoryName + '</td>';
+                    html += '<td>' + item.StatusStr + '</td>';
+                    html += '<td><a href = "#" onclick="return GetbyId(' + item.CategoryId + ')" style="align="left" valign="top">Edit</a></td >';
+                    html += '<td><a href = "#" onclick = "return Delete(' + item.CategoryId + ')" style=" align="center" valign="top" ><img src="../Images/icon-bin.jpg" alt="" width="25" height="25" border="0" align="absmiddle" /></a ></td > ';
+                    html += '</tr>';
+                });
+                $('.tbody').html(html);
+            },
+            error: function (errormessage) {
+                toastr["warning"](errormessage, "Warning");
+            }
+        });
+    }
+    function Add() {
+        if ($("#CategoryName").val() == '') {
+            toastr.warning("Please Enter Category Name");
+            return;
+        }
+        var dtObj = {};
+        dtObj.CategoryName = $("#CategoryName").val();
+        if ($('#ChkStatus').is(':checked')) {
+            dtObj.Status = 1;
+        }
+        else {
+            dtObj.Status = 0;
+        }
+        $.ajax({
+            url: "/Home/AddCategory",
+            data: JSON.stringify(dtObj),
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                if (result == 1) {
+                    toastr.success("Category Successfully Inserted", "Success");
+                    $('#CategoryName').val('');
+                    GetCategory();
+                }
+                else {
+                    toastr["warning"](Response.Message, "Warning");
+                }
+            },
+            error: function (errormessage) {
+                toastr["warning"](errormessage, "Warning");
+            }
+        });
+    }
+    function GetbyId(CategoryId) {
+        $('#CategoryName').css('border-color', 'lightgrey');
+        $('#ChkStatus').css('border-color', 'lightgrey');
+        var customerId = CategoryId;
+        $.ajax({
+            url: "/Home/GetCategorybyId",
+            type: "POST",
+            data: '{CategoryId: ' + customerId + '}',
+            contentType: "application/json;charset=UTF-8",
+            dataType: "json",
+            success: function (result) {
+                $('#CatId').val(result.CategoryId);
+                $('#CategoryName').val(result.CategoryName);
+                var Status = result.Status;
+                if (Status == 1) {
+                    $('#ChkStatus').prop("checked", true);
+                }
+                $('#btnUpdate').show();
+                $('#btnAdd').hide();
+            },
+            error: function (errormessage) {
+                toastr["warning"](errormessage, "Warning");
+            }
+        });
+        return false;
+    }
+    function Update() {
+        if ($("#CategoryName").val() == '') {
+            toastr.warning("Please Enter Category Name");
+            return;
+        }
+        var dtObj = {};
+        dtObj.CategoryId = $("#CatId").val();
+        dtObj.CategoryName = $("#CategoryName").val();
+        if ($('#ChkStatus').is(':checked')) {
+            dtObj.Status = 1;
+        }
+        else {
+            dtObj.Status = 0;
+        }
+        $.ajax({
+            url: "/Home/UpdateCategory",
+            data: JSON.stringify(dtObj),
+            type: "POST",
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (result) {
+                if (result == 1) {
+                    toastr.success("Category Successfully Updated", "Success");
+                    $('#btnUpdate').hide();
+                    $('#btnAdd').show();
+                    $('#CategoryName').val("");
+                    $('#ChkStatus').prop("checked", false);
+                    GetCategory();
+                }
+                else {
+                   toastr["warning"](Response.Message, "Warning");
+                }
+            },
+            error: function (errormessage) {
+                toastr["warning"](errormessage, "Warning");
+            }
+        });
+    }
+    function Delete(CategoryId) {
+        Swal.fire({
+            title: 'Do you want Delete this Category?',
+            showDenyButton: true,
+            confirmButtonText: 'yes',
+            denyButtonText: 'No',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                var customerId = CategoryId;
+                $.ajax({
+                    url: "/Home/DeleteCategory",
+                    type: "POST",
+                    data: '{CategoryId: ' + customerId + '}',
+                    contentType: "application/json;charset=UTF-8",
+                    dataType: "json",
+                    success: function (result) {
+                        if (result == 1) {
+                            toastr.success("Category Successfully Deleted", "Success");
+                            GetCategory();
+                        }
+                    },
+                    error: function (errormessage) {
+                        toastr["warning"](errormessage, "Warning"); 
+                    }
+                });
+            }
+            else if (result.isDenied) {
+                Swal.fire('No', '', 'info');
+            }
+
+        })
+    }
+</script>
